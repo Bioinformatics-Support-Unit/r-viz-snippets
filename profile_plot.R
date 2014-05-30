@@ -1,5 +1,4 @@
 require(ggplot2)
-require(plyr)
 require(reshape2)
 
 plot_profile <- function(expression_matrix) {

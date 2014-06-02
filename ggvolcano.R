@@ -12,8 +12,8 @@ gg_volcano = function(unfiltered_toptable, afc=2, pval=0.05) {
   # add points and delimiter lines, colour according to pass/fail criteria
   g + geom_point(aes(colour=pass), show_guide=F) + scale_colour_manual(values=c(alpha('black', 0.5), 'red')) +
     geom_hline(yintercept=-log(pval, 10), colour="red", linetype=2) +
-    geom_vline(xintercept=-log2(lfc), colour="red", linetype=2) +
-    geom_vline(xintercept=log2(lfc), colour="red", linetype=2) +
+    geom_vline(xintercept=-log2(afc), colour="red", linetype=2) +
+    geom_vline(xintercept=log2(afc), colour="red", linetype=2) +
     theme_bw()
 }
 

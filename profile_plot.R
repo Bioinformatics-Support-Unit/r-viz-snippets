@@ -41,7 +41,10 @@ plot_profile <- function(expression_matrix, treatments=colnames(expression_matri
     for(i in 1:length(unique_treatments)) {
       matches <- colnames(expression_matrix)[grep(unique_treatments[i], treatments)]
       tmp <- c(tmp, matches)
-      melted_var[melted_var == matches] <- unique_treatments[i]
+      for(j in 1:length(matches)) {
+        melted_var[melted_var == matches[j]] <- unique_treatments[i]
+      }
+      
     }
     melted$facet_split <- melted_var
     

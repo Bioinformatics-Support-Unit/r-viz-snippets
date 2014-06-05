@@ -7,8 +7,8 @@
 ##'                vector for custom x-axis labels. Produces a "GeneSpring" style profile plot from    |
 ##'                microarray data.                                                                    |
 ##'  Parameters  : expression_matrix | type: expressionset | Required | Def: NA                        |
-##'                x_lab             | type: chr vector    | Optional | Def: colnames of expressionset |
-##'                                                                                                    |
+##'                treatments        | type: chr vector    | Optional | Def: colnames of expressionset |
+##'                sep               | type: logical       | Optional | Def: FALSE                     |
 ##'----------------------------------------------------------------------------------------------------#
 
 require(ggplot2)

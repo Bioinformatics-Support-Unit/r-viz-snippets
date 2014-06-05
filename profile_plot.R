@@ -1,5 +1,6 @@
 ##'----------------------------------------------------------------------------------------------------#
 ##'  Author      : BSU - Dr. Simon Cockell                                                             |
+##'  Version     : 1.3                                                                                 |
 ##'  Language    : R Statistical Programming Language                                                  |
 ##'  Developers  : Dr. Simon Cockell                                                                   |
 ##'                Andrew Skelton                                                                      |
@@ -11,26 +12,15 @@
 ##'                sep               | type: logical       | Optional | Def: FALSE                     |
 ##'----------------------------------------------------------------------------------------------------#
 
+##'Test Inputs
+# expression_matrix <- exprs(eset.spike[,1:36])
+# treatments <- treatment
+
 require(ggplot2)
 require(reshape2)
-require(gridExtra)
 
 ##' This function plots a "GeneSpring" style profile plot from microarray data
 plot_profile <- function(expression_matrix, treatments=colnames(expression_matrix), sep=FALSE) {
-  
-  if(sep == TRUE) {
-    unique_treatments <- unique(treatments)
-    treatments_master        <- treatments
-    expression_matrix_master <- expression_matrix
-    printer <- list()
-  } else {
-    unique_treatments <- c("All")
-  }
-  
-  for(i in 1:length(unique_treatments)) {
-    
-    if(sep == TRUE){expression_matrix <- expression_matrix_master[, grep(unique_treatments[i], treatments_master)]}
-    treatments <- rep(unique_treatments[i], length(colnames(expression_matrix)))
     
     ##' Rearrange the data matrix as a data frame, and add a column for grouping
     for_profile <- as.data.frame(expression_matrix)
@@ -44,33 +34,37 @@ plot_profile <- function(expression_matrix, treatments=colnames(expression_matri
     melted$value_in_first = rep(melted[melted$probe==melted$probe & melted$variable==colnames(expression_matrix)[1],]$value,
                                 each=ncol(expression_matrix))
   
+    ##'This provides the slot for 'melted' to determine how to split the facets
+    melted_var <- as.character(melted$variable)
+    unique_treatments <- unique(treatments)
+    tmp <- c()
+    for(i in 1:length(unique_treatments)) {
+      matches <- colnames(expression_matrix)[grep(unique_treatments[i], treatments)]
+      tmp <- c(tmp, matches)
+      melted_var[melted_var == matches] <- unique_treatments[i]
+    }
+    melted$facet_split <- melted_var
+    
     ##' construct the plot in ggplot2, grouping by probe, and colouring by expression
     ##' in the first sample
-    printer[[i]] <- ggplot(data=melted, aes(x=as.factor(variable), y=value)) +
-                      scale_x_discrete(labels=treatments) + 
-                      #geom_vline(xintercept=sample_sep, colour="black", linetype = "longdash") + 
+    g <- ggplot(data=melted, aes(x=as.factor(variable), y=value)) +
+                      #theme(axis.text.x = element_blank()) +
                       theme_bw() +
+                      theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=10)) +
                       geom_point(aes(group=probe, colour=value_in_first)) +
                       geom_line(aes(group=probe, colour=value_in_first)) +
-                      theme(legend.position="none") + 
+                      scale_x_discrete(breaks=levels(factor(melted$variable)) , labels=treatments) +
+                      #scale_x_discrete(breaks=levels(factor(melted$variable)) , labels=treatment) + 
                       scale_colour_gradient2(low='blue', high='red', mid='yellow', 
                                              midpoint=(max(melted$value_in_first) + min(melted$value_in_first))/2)
-  }
-  
-  args.list <- c(printer, list(nrow=1,ncol=length(printer)))
-  do.call(grid.arrange, args.list)
+    
+    if(sep == TRUE){
+      g <- g + facet_grid(. ~ facet_split, space="free", scales="free_x")
+    }
+    print(g)
 }
-
 
 ##' generate some random, not microarray like data for example
 em <- matrix(rnorm(50*10), ncol=10)
 colnames(em) <- letters[1:10]
 plot_profile(em)
-
-
-par(mfrow = c(3, 1))
-#length(unique_treatments)
-for(i in 1:length(printer)) {
-  print(printer[[i]])  
-}
-printer <<- printer

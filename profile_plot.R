@@ -10,6 +10,7 @@
 ##'  Parameters  : expression_matrix | type: expressionset | Required | Def: NA                        |
 ##'                treatments        | type: chr vector    | Optional | Def: colnames of expressionset |
 ##'                sep               | type: logical       | Optional | Def: FALSE                     |
+##'                ret_obj           | type: logical       | Optional | Def: FALSE                     |
 ##'----------------------------------------------------------------------------------------------------#
 
 ##'Test Inputs
@@ -20,7 +21,7 @@ require(ggplot2)
 require(reshape2)
 
 ##' This function plots a "GeneSpring" style profile plot from microarray data
-plot_profile <- function(expression_matrix, treatments=colnames(expression_matrix), sep=FALSE) {
+plot_profile <- function(expression_matrix, treatments=colnames(expression_matrix), sep=FALSE, ret_obj=FALSE) {
 
     ##' Rearrange the data matrix as a data frame, and add a column for grouping
     for_profile <- as.data.frame(expression_matrix)
@@ -51,7 +52,13 @@ plot_profile <- function(expression_matrix, treatments=colnames(expression_matri
     if(sep == TRUE){
       g <- g + facet_grid(. ~ facet_split, space="free", scales="free_x")
     }
-    print(g)
+
+    if(ret_obj == TRUE) {
+      return(g)
+    } else {
+      print(g)
+    }
+
 }
 
 ##' generate some random, not microarray like data for example

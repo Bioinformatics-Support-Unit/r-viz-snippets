@@ -1,3 +1,12 @@
+# uncomment to check for & install dependencies
+# packages = c('ggplot2', 'scales', 'devtools', 'ggvis')
+# installed = packages %in% installed.packages()
+# install_deps = function(dep, ins) {
+#   if (dep=='ggvis' & !ins) devtools::install_github(c("rstudio/rmarkdown", "rstudio/ggvis"), build_vignettes = FALSE)
+#   else if (!ins) install.packages(dep)
+#   else "installed"
+# }
+# mapply(install_deps, packages, installed)
 require(ggplot2)
 require(scales)
 require(ggvis)
@@ -24,20 +33,34 @@ ggvis_volcano = function(unfiltered_toptable, afc=2, pval=0.05, tooltip="symbol"
   # ggvis Volcano Plot with tooltips (genenames). 
   # Optional arguments are an absolute fold change, adj
   # p-Value cutoff and name of tooltip column in results
-  
   # add a pass/fail column, based on the afc and pval cutoffs - 
   # needs ot be numeric for colouring
-  unfiltered_toptable$pass = as.numeric(unfiltered_toptable$adj.P.Val < pval & abs(unfiltered_toptable$logFC) > log2(afc))
-  unfiltered_toptable[,"tooltip"] = unfiltered_toptable[,tooltip]
+  pass = as.numeric(unfiltered_toptable$adj.P.Val < pval & abs(unfiltered_toptable$logFC) > log2(afc))
+  tooltip_column = unfiltered_toptable[,tooltip]
+  #remove NAs (otherwise points disappear)
+  tooltip_column[is.na(tooltip_column)] = "NA"
+  df = data.frame(logFC=unfiltered_toptable$logFC, 
+                  adj.P.Val=unfiltered_toptable$adj.P.Val, 
+                  pass=pass, 
+                  tooltip=tooltip_column, 
+                  keys=rownames(unfiltered_toptable))
+  # this prevents a bug (plot disappears when tooltipping a particular point) - why?
+  head(df, 50)
   # Need data frames for ablines
   h_abline = data.frame(logFC=range(unfiltered_toptable$logFC),adj.P.Val=pval)
   v_abline1 = data.frame(logFC=-log2(afc),adj.P.Val=range(unfiltered_toptable$adj.P.Val))
   v_abline2 = data.frame(logFC=log2(afc),adj.P.Val=range(unfiltered_toptable$adj.P.Val))
+  #function for generating tooltips
+  tooltip_info = function(x=NULL) {
+    if(is.null(x)) return(NULL)
+    key = x["keys"][[1]]
+    df[df$keys==key,]$tooltip
+  }
   #build the plot
   ggvis(data=NULL, x=~logFC, y=~-log10(adj.P.Val)) %>%
     layer_points(size:=30, fill=~factor(pass),
-                 opacity:=0.5, key:=~tooltip, data=unfiltered_toptable) %>%
-    add_tooltip(function(x) x$tooltip) %>%
+                 opacity:=0.5, key:=~keys, data=df) %>%
+    add_tooltip(tooltip_info) %>%
     layer_paths(stroke:='red', data=h_abline) %>%
     layer_paths(stroke:='red', data=v_abline1) %>%
     layer_paths(stroke:='red', data=v_abline2)  

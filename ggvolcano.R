@@ -11,7 +11,7 @@ require(ggplot2)
 require(scales)
 require(ggvis)
 
-gg_volcano = function(unfiltered_toptable, afc=2, pval=0.05) {
+gg_volcano = function(unfiltered_toptable, afc=2, pval=0.05, title=NA) {
   # this function takes the unfiltered results of topTable (limma), and plots a
   # ggplot2 Volcano Plot. Optional arguments are an absolute fold change and adj
   # p-Value cutoff.
@@ -21,11 +21,13 @@ gg_volcano = function(unfiltered_toptable, afc=2, pval=0.05) {
   # plot basics - x axis is lfc, y axis is -log10(pVal)
   g = ggplot(unfiltered_toptable, aes(x=logFC, y=-log(adj.P.Val, 10)))
   # add points and delimiter lines, colour according to pass/fail criteria
-  g + geom_point(aes(colour=pass), show_guide=F) + scale_colour_manual(values=c(alpha('black', 0.5), 'red')) +
+  g = g + geom_point(aes(colour=pass), show_guide=F) + scale_colour_manual(values=c(alpha('black', 0.5), 'red')) +
     geom_hline(yintercept=-log(pval, 10), colour="red", linetype=2) +
     geom_vline(xintercept=-log2(afc), colour="red", linetype=2) +
     geom_vline(xintercept=log2(afc), colour="red", linetype=2) +
     theme_bw()
+  if (!is.na(title)) g = g + ggtitle(title)
+  return(g)
 }
 
 ggvis_volcano = function(unfiltered_toptable, afc=2, pval=0.05, tooltip="symbol") {
@@ -45,7 +47,7 @@ ggvis_volcano = function(unfiltered_toptable, afc=2, pval=0.05, tooltip="symbol"
                   tooltip=tooltip_column, 
                   keys=rownames(unfiltered_toptable))
   # this prevents a bug (plot disappears when tooltipping a particular point) - why?
-  head(df, 50)
+  df
   # Need data frames for ablines
   h_abline = data.frame(logFC=range(unfiltered_toptable$logFC),adj.P.Val=pval)
   v_abline1 = data.frame(logFC=-log2(afc),adj.P.Val=range(unfiltered_toptable$adj.P.Val))
@@ -66,7 +68,51 @@ ggvis_volcano = function(unfiltered_toptable, afc=2, pval=0.05, tooltip="symbol"
     layer_paths(stroke:='red', data=v_abline2)  
 }
 
-
-
 # sample usage
 gg_volcano(topTable(fit2, coef=1, number=Inf), 1.5, 0.01)
+
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  require(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}

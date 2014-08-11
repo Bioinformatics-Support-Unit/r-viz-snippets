@@ -11,7 +11,7 @@ require(ggplot2)
 require(scales)
 require(ggvis)
 
-gg_volcano = function(unfiltered_toptable, afc=2, pval=0.05, title=NA) {
+gg_volcano = function(unfiltered_toptable, afc=2, pval=0.05, title=NA, report=FALSE) {
   # this function takes the unfiltered results of topTable (limma), and plots a
   # ggplot2 Volcano Plot. Optional arguments are an absolute fold change and adj
   # p-Value cutoff.
@@ -27,6 +27,9 @@ gg_volcano = function(unfiltered_toptable, afc=2, pval=0.05, title=NA) {
     geom_vline(xintercept=log2(afc), colour="red", linetype=2) +
     theme_bw()
   if (!is.na(title)) g = g + ggtitle(title)
+  if (report) {
+    g = g + theme(plot.title=element_text(size=6), axis.title=element_text(size=6))
+  }
   return(g)
 }
 
